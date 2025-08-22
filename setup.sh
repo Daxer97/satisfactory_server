@@ -22,8 +22,8 @@ MEMORY=8192                            # RAM in MB (min 8GB recommended)
 CORES=4                                # CPU cores (adjust based on host)
 DISK_SIZE=50G                          # Disk size for VM
 BRIDGE="vmbr0"                         # Network bridge for the VM
-STORAGE="HDD2"                         # Proxmox storage for VM disk/cloud-init
-ISO_STORAGE="HDD2"                     # Storage location for ISOs/template images
+STORAGE="local-lvm"                    # Proxmox storage for VM disk/cloud-init
+ISO_STORAGE="local"                    # Storage location for ISOs/template images
 
 UBUNTU_CLOUD_IMG="ubuntu-22.04-server-cloudimg-amd64.img"
 UBUNTU_CLOUD_URL="https://cloud-images.ubuntu.com/jammy/current/${UBUNTU_CLOUD_IMG}"
@@ -46,11 +46,11 @@ SAVED_GAME_SRC="" # e.g., "/home/myuser/SatisfactorySaves/"
 
 echo "==> [1/8] Checking for Ubuntu cloud image..."
 
-if [ ! -f "/var/lib/vz/template/iso/${UBUNTU_CLOUD_IMG}" ]; then
-  echo "Ubuntu image not found, downloading..."
+if [ ! -s "/var/lib/vz/template/iso/${UBUNTU_CLOUD_IMG}" ]; then
+  echo "Ubuntu image not found or empty, downloading..."
   wget -O "/var/lib/vz/template/iso/${UBUNTU_CLOUD_IMG}" "${UBUNTU_CLOUD_URL}"
 else
-  echo "Ubuntu image found."
+  echo "Ubuntu image found and valid."
 fi
 
 # --- 2. Create the Proxmox VM ---
