@@ -69,11 +69,10 @@ The table above outlines minimum recommended requirements based on [Satisfactory
 If you’re in a hurry and want to try the automated install with the default parameters, run this on your Proxmox host:
 
 ```bash
-bash <(curl -fsSL https://github.com/YourUsername/proxmox-satisfactory-script/raw/main/setup.sh)
+bash <(curl -fsSL https://github.com/Daxer97/satisfacroty_server/raw/main/setup.sh)
 ```
 
-- Replace `YourUsername` and the actual repo path as appropriate.
-- The script will prompt for options where required. 
+- The script will prompt for options where required.
 - Advanced/automated use cases (custom VM IDs, import options, advanced networking) can be handled via additional options—see the full usage section below.
 
 **Security Note:** Always review third-party scripts or run in a non-production environment if in doubt! This project aims for openness and safety, but you should always apply best security practices.
@@ -113,7 +112,7 @@ This end-to-end process is built on established best practices from community gu
 While the one-liner (see above) is safe for quick trial, for maximum control or forking your own version:
 
 ```bash
-git clone https://github.com/YourUsername/proxmox-satisfactory-script.git
+git clone https://github.com/Daxer97/proxmox-satisfactory-script.git
 cd proxmox-satisfactory-script
 less setup.sh  # Review or edit as needed
 bash setup.sh  # Launch interactive/main install script
