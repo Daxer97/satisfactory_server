@@ -187,6 +187,11 @@ ufw --force enable
 # 8. Create save directory, fix permissions
 mkdir -p "${SAT_SAVEDIR}"
 chown -R ${SAT_USER}:${SAT_USER} "${SAT_HOME}/.config"
+
+# 9. Add "Buy me a Coffe header"
+sudo sh -c 'echo "" >> /etc/motd'
+sudo sh -c 'echo "💖 Support this project: https://www.paypal.me/daxernet" >> /etc/motd'
+sudo sh -c 'echo "" >> /etc/motd'
 EOF
 
 chmod +x "${PROVISION_SCRIPT}"
