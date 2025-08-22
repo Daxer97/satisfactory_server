@@ -83,7 +83,8 @@ qm set ${VMID} \
   --boot order=scsi0 \
   --ide2 "${STORAGE}:cloudinit" \
   --ipconfig0 ip=dhcp \
-  --sshkeys "${SSH_PUBLIC_KEY}"
+  --sshkeys "${SSH_PUBLIC_KEY}" \
+  --agent enabled=1 \
 
 qm resize ${VMID} scsi0 ${DISK_SIZE}
 
@@ -92,8 +93,8 @@ qm resize ${VMID} scsi0 ${DISK_SIZE}
 echo "==> [3/8] Starting VM for cloud-init provisioning..."
 qm start ${VMID}
 
-echo "==> Waiting 60 seconds for cloud-init to apply basic config (SSH, net)..."
-sleep 120
+echo "==> Waiting 180 seconds for cloud-init to apply basic config (SSH, net)..."
+sleep 180
 
 # Try to find the VM IP using qemu-guest-agent
 VM_IP=""
