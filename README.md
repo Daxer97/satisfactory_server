@@ -69,7 +69,7 @@ The table above outlines minimum recommended requirements based on [Satisfactory
 If you’re in a hurry and want to try the automated install with the default parameters, run this on your Proxmox host:
 
 ```bash
-bash <(curl -fsSL https://github.com/Daxer97/satisfacroty_server/raw/main/setup.sh)
+bash <(curl -fsSL https://github.com/Daxer97/satisfactory_server/raw/main/setup.sh)
 ```
 
 - The script will prompt for options where required.
@@ -112,7 +112,7 @@ This end-to-end process is built on established best practices from community gu
 While the one-liner (see above) is safe for quick trial, for maximum control or forking your own version:
 
 ```bash
-git clone https://github.com/Daxer97/proxmox-satisfactory-script.git
+git clone https://github.com/Daxer97/satisfactory_server/raw/main/setup.sh
 cd proxmox-satisfactory-script
 less setup.sh  # Review or edit as needed
 bash setup.sh  # Launch interactive/main install script
