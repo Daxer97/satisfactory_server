@@ -65,9 +65,9 @@ fi
 qm create ${VMID} \
   --name "${VM_NAME}" \
   --tags community-script \
-  --memory ${MEMORY} \
-  --cores ${CORES} \
-  --net0 virtio,bridge=${BRIDGE} \
+  --memory "${MEMORY}" \
+  --cores "${CORES}" \
+  --net0 virtio,bridge="${BRIDGE}" \
   --agent enabled=1 \
   --bios ovmf --machine q35 \
   --serial0 socket --vga serial0 \
