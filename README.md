@@ -1,4 +1,4 @@
-# Proxmox Satisfactory Dedicated Server Helper Script: README
+# Proxmox Satisfactory Dedicated Server Helper Script
 
 ---
 
@@ -11,8 +11,6 @@ This script is designed as an all-in-one automation solution for deploying a ded
 ---
 
 ## Table of Contents
-
-*Note:* As per current GitHub UI, a Table of Contents will be automatically generated from the headings below.
 
 ---
 
