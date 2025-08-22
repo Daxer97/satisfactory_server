@@ -85,7 +85,8 @@ qm set ${VMID} \
   --ide2 "${STORAGE}:cloudinit" \
   --ipconfig0 ip=dhcp \
   --sshkeys "${SSH_PUBLIC_KEY}" \
-  --efidisk0 "${STORAGE}:vm-${VMID}-efidisk0,efitype=4m,pre-enrolled-keys=1" 
+  --efidisk0 "${STORAGE}:vm-${VMID}-disk-0,efitype=4m,pre-enrolled-keys=1" 
+
 qm resize ${VMID} scsi0 ${DISK_SIZE}
 
 # --- 3. Start VM and Wait for Provisioning (Cloud-Init) ---
