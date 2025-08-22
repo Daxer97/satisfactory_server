@@ -94,7 +94,17 @@ echo "==> [3/8] Starting VM for cloud-init provisioning..."
 qm start ${VMID}
 
 echo "==> Waiting 180 seconds for cloud-init to apply basic config (SSH, net)..."
-sleep 180
+
+# Wait for QEMU Guest Agent to respond
+for i in {1..30}; do
+    if qm guest exec ${VMID} -- ls / >/dev/null 2>&1; then
+        echo "Guest agent is up"
+        break
+    fi
+    echo "Waiting for guest agent..."
+    sleep 5
+done
+
 
 # Try to find the VM IP using qemu-guest-agent
 VM_IP=""
