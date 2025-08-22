@@ -79,8 +79,7 @@ qm importdisk ${VMID} "/var/lib/vz/template/iso/${UBUNTU_CLOUD_IMG}" "${STORAGE}
 
 qm set ${VMID} \
   --scsihw virtio-scsi-pci \
-  --scsi0 "${STORAGE}:vm-${VMID}-disk-0" \
-  --virtualsize "${DISK_SIZE}" \
+  --scsi0 "${STORAGE}:vm-${VMID}-disk-0,size="${DISK_SIZE}" \
   --boot order=scsi0 \
   --ide2 "${STORAGE}:cloudinit" \
   --ipconfig0 ip=dhcp \
