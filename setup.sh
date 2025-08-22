@@ -64,6 +64,7 @@ fi
 
 qm create ${VMID} \
   --name "${VM_NAME}" \
+  --tags community-script \
   --memory ${MEMORY} \
   --cores ${CORES} \
   --net0 virtio,bridge=${BRIDGE} \
@@ -84,6 +85,7 @@ qm set ${VMID} \
   --ide2 "${STORAGE}:cloudinit" \
   --ipconfig0 ip=dhcp \
   --sshkeys "${SSH_PUBLIC_KEY}" \
+  --efidisk0 "${STORAGE}":vm-${VMID}-efidisk0,efitype=4m,pre-enrolled-keys=1" \
   
 qm resize ${VMID} scsi0 ${DISK_SIZE}
 
@@ -92,18 +94,8 @@ qm resize ${VMID} scsi0 ${DISK_SIZE}
 echo "==> [3/8] Starting VM for cloud-init provisioning..."
 qm start ${VMID}
 
-echo "==> Waiting 180 seconds for cloud-init to apply basic config (SSH, net)..."
-
-# Wait for QEMU Guest Agent to respond
-for i in {1..30}; do
-    if qm guest exec ${VMID} -- ls / >/dev/null 2>&1; then
-        echo "Guest agent is up"
-        break
-    fi
-    echo "Waiting for guest agent..."
-    sleep 5
-done
-
+echo "==> Waiting 60 seconds for cloud-init to apply basic config (SSH, net)..."
+sleep 60
 
 # Try to find the VM IP using qemu-guest-agent
 VM_IP=""
