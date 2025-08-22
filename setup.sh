@@ -243,5 +243,4 @@ echo "==> [8/8] Setup complete!"
 echo "   Claim the server via in-game Server Manager first!"
 echo "   Set server/admin passwords and session via the Satisfactory client."
 echo
-echo "Script finished"
 exit 0
