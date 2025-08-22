@@ -23,7 +23,7 @@ CORES=4                                # CPU cores (adjust based on host)
 DISK_SIZE=50G                          # Disk size for VM
 BRIDGE="vmbr0"                         # Network bridge for the VM
 STORAGE="HDD2"                         # Proxmox storage for VM disk/cloud-init
-ISO_STORAGE="local"                    # Storage location for ISOs/template images
+ISO_STORAGE="HDD2"                     # Storage location for ISOs/template images
 
 UBUNTU_CLOUD_IMG="ubuntu-22.04-server-cloudimg-amd64.img"
 UBUNTU_CLOUD_URL="https://cloud-images.ubuntu.com/jammy/current/${UBUNTU_CLOUD_IMG}"
