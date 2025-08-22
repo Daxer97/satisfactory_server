@@ -12,8 +12,6 @@ This script is designed as an all-in-one automation solution for deploying a ded
 
 ## Table of Contents
 
----
-
 ## Purpose
 
 The **Proxmox Satisfactory Helper Script** lets you:
