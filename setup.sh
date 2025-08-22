@@ -232,7 +232,6 @@ echo "   To check status:"
 echo "     ssh ubuntu@${VM_IP} 'systemctl status satisfactory'"
 echo "   To restart:"
 echo "     ssh ubuntu@${VM_IP} 'sudo systemctl restart satisfactory'"
-echo
 echo "Game files location on server "
 echo "   ${SAT_SERVERDIR}"
 echo "==> Save file directory:"
