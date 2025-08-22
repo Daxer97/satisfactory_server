@@ -25,7 +25,7 @@ BRIDGE="vmbr0"                         # Network bridge for the VM
 STORAGE="local-lvm"                    # Proxmox storage for VM disk/cloud-init
 ISO_STORAGE="local"                    # Storage location for ISOs/template images
 
-UBUNTU_CLOUD_IMG="ubuntu-22.04-server-cloudimg-amd64.img"
+UBUNTU_CLOUD_IMG="jammy-server-cloudimg-amd64.img"
 UBUNTU_CLOUD_URL="https://cloud-images.ubuntu.com/jammy/current/${UBUNTU_CLOUD_IMG}"
 
 SSH_PUBLIC_KEY="${HOME}/.ssh/id_rsa.pub" # Change if using a different SSH key
