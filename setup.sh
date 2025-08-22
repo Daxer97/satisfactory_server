@@ -22,7 +22,7 @@ MEMORY=8192                            # RAM in MB (min 8GB recommended)
 CORES=4                                # CPU cores (adjust based on host)
 DISK_SIZE=50G                          # Disk size for VM
 BRIDGE="vmbr0"                         # Network bridge for the VM
-STORAGE="local-lvm"                    # Proxmox storage for VM disk/cloud-init
+STORAGE="local"                        # Proxmox storage for VM disk/cloud-init
 ISO_STORAGE="local"                    # Storage location for ISOs/template images
 
 UBUNTU_CLOUD_IMG="ubuntu-22.04-server-cloudimg-amd64.img"
@@ -79,7 +79,7 @@ qm importdisk ${VMID} "/var/lib/vz/template/iso/${UBUNTU_CLOUD_IMG}" "${STORAGE}
 
 qm set ${VMID} \
   --scsihw virtio-scsi-pci \
-  --scsi0 "${STORAGE}:vm-${VMID}-disk-0,size="${DISK_SIZE}" \
+  --scsi0 "${STORAGE}:vm-${VMID}-disk-0" \
   --boot order=scsi0 \
   --ide2 "${STORAGE}:cloudinit" \
   --ipconfig0 ip=dhcp \
