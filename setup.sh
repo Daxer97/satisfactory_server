@@ -97,22 +97,20 @@ echo "==> Waiting 60 seconds for cloud-init to apply basic config ..."
 sleep 60
 
 # Try to find the VM IP using qemu-guest-agent
-VM_IP=""
-for i in {1..10}; do
-  VM_IP=$(qm guest cmd ${VMID} network-get-interfaces | grep -Eo '\"ip-address\":\s*\"[0-9.]+\"' | grep -v '127.0.0.1' | grep -Eo '[0-9.]+')
-  if [ -n "$VM_IP" ]; then
-    break
-  fi
-  sleep 6
+VM_MAC=$(qm config ${VMID} | awk -F'[,=]' '/net0/ {print $2}')
+for i in {1..20}; do
+    VM_IP=$(arp -an | grep -i "$VM_MAC" | awk '{print $2}' | tr -d '()')
+    if [ -n "$VM_IP" ]; then
+        break
+    fi
+    sleep 5
 done
 
-if [ -z "$VM_IP" ]; then
-  echo "Could not automatically determine VM IP. You must manually SSH to continue."
-  echo "Consider running: 'qm guest cmd ${VMID} network-get-interfaces' to find IP."
-  exit 1
+if [ -n "$VM_IP" ]; then
+    echo "Detected VM IP: $VM_IP"
+else
+    echo "Could not detect VM IP"
 fi
-
-echo "==> Detected VM IP: ${VM_IP}"
 
 # --- 4. SSH and Provision SteamCMD/Satisfactory Server ---
 
