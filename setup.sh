@@ -97,7 +97,27 @@ sleep 60
 # Try to find the VM IP using qemu-guest-agent
 
 VM_IP="192.168.1.50"
+VM_USER="ubuntu"           # Change if your cloud image uses a different default user
+SSH_KEY="$HOME/.ssh/id_rsa.pub"
 
+echo "==> Waiting for Cloud-Init to finish..."
+ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 ${VM_USER}@${VM_IP} \
+    'cloud-init status --wait' || {
+    echo "Cloud-Init did not complete. Check VM console."
+    exit 1
+}
+
+echo "==> Checking IPv4 connectivity..."
+ssh ${VM_USER}@${VM_IP} "ip -4 addr show | grep -q 'inet '" || {
+    echo "No IPv4 address found inside VM."
+    exit 1
+}
+
+echo "==> Testing SSH connectivity..."
+ssh -o BatchMode=yes -o ConnectTimeout=5 ${VM_USER}@${VM_IP} "echo SSH OK" || {
+    echo "SSH test failed. Check keys and network."
+    exit 1
+}
 #VM_MAC=$(qm config ${VMID} | awk -F'[,=]' '/net0/ {print $2}')
 #for i in {1..20}; do
 #    VM_IP=$(ip neigh | grep -i "$VM_MAC" | awk '{print $1}')
