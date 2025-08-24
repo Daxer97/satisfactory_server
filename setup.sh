@@ -96,7 +96,7 @@ qm start ${VMID}
 # Try to find the VM IP using qemu-guest-agent
 VM_MAC=$(qm config ${VMID} | awk -F'[,=]' '/net0/ {print $2}')
 for i in {1..20}; do
-    VM_IP=$(arp -an | grep -i "$VM_MAC" | awk '{print $2}' | tr -d '()')
+    VM_IP=$(ip neigh | grep -i "$VM_MAC" | awk '{print $1}')
     if [ -n "$VM_IP" ]; then
         break
     fi
