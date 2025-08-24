@@ -64,7 +64,6 @@ fi
 
 qm create ${VMID} \
   --name "${VM_NAME}" \
-  --tags community-script \
   --memory "${MEMORY}" \
   --cores "${CORES}" \
   --net0 virtio,bridge="${BRIDGE}" \
