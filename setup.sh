@@ -82,7 +82,7 @@ qm set ${VMID} \
   --scsi0 "${STORAGE}:vm-${VMID}-disk-0" \
   --boot order=scsi0 \
   --ide2 "${STORAGE}:cloudinit" \
-  --ipconfig0 ip=192.168.1.50/24,gw=192.168.1.1 \
+  --ipconfig0 ip=dhcp \
   --sshkeys "${SSH_PUBLIC_KEY}" \
   
 qm resize ${VMID} scsi0 ${DISK_SIZE}
@@ -95,23 +95,20 @@ echo "Waiting 60 second for machine to boot"
 sleep 60
 
 # Try to find the VM IP using qemu-guest-agent
+VM_MAC=$(qm config ${VMID} | awk -F'[,=]' '/net0/ {print $2}')
+for i in {1..20}; do
+    VM_IP=$(ip neigh | grep -i "$VM_MAC" | awk '{print $1}')
+    if [ -n "$VM_IP" ]; then
+        break#
+    fi
+    sleep 5
+done
 
-VM_IP="192.168.1.50"
-
-#VM_MAC=$(qm config ${VMID} | awk -F'[,=]' '/net0/ {print $2}')
-#for i in {1..20}; do
-#    VM_IP=$(ip neigh | grep -i "$VM_MAC" | awk '{print $1}')
-#    if [ -n "$VM_IP" ]; then
-#        break
-#    fi
-#    sleep 5
-#done
-
-#if [ -n "$VM_IP" ]; then
-#    echo "Detected VM IP: $VM_IP"
-#else
-#    echo "Could not detect VM IP"
-#fi
+if [ -n "$VM_IP" ]; then
+    echo "Detected VM IP: $VM_IP"
+else
+    echo "Could not detect VM IP"
+fi
 
 # --- 4. SSH and Provision SteamCMD/Satisfactory Server ---
 
