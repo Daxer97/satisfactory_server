@@ -92,6 +92,8 @@ qm resize ${VMID} scsi0 ${DISK_SIZE}
 
 echo "==> [3/8] Starting VM for cloud-init provisioning..."
 qm start ${VMID}
+echo "Waiting 60 second for machine to boot"
+sleep 60
 
 # Try to find the VM IP using qemu-guest-agent
 VM_MAC=$(qm config ${VMID} | awk -F'[,=]' '/net0/ {print $2}')
