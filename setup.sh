@@ -146,15 +146,14 @@ log() { echo -e "\n[INFO] $*\n"; }
 err() { echo -e "\n[ERROR] $*\n" >&2; }
 
 install_with_retry() {
-    # Safe capture without touching $1 directly
+    # Accept package name(s) as arguments without touching $1
     if [ "$#" -lt 1 ]; then
         err "install_with_retry() called without a package name"
         return 1
     fi
 
-    # Use "$@" to avoid unbound variable expansion
-    local pkg
-    pkg="$1"
+    local args=("$@")
+    local pkg="${args[0]}"
 
     local retries=3
     local count=0
@@ -254,30 +253,7 @@ log "Adding MOTD message"
 } >> /etc/motd
 
 log "Setup complete!"
-EOL
 
-systemctl daemon-reload
-systemctl enable satisfactory
-systemctl start satisfactory
-
-log "Configuring firewall"
-ufw allow 7777
-ufw allow 15000
-ufw allow 15777
-ufw --force enable
-
-log "Setting up save directory"
-mkdir -p "${SAT_SAVEDIR}"
-chown -R "${SAT_USER}:${SAT_USER}" "${SAT_HOME}/.config"
-
-log "Adding MOTD message"
-{
-    echo ""
-    echo "💖 Support this project: https://www.paypal.me/daxernet"
-    echo ""
-} >> /etc/motd
-
-log "Setup complete!"
 EOF
 
 chmod +x "${PROVISION_SCRIPT}"
