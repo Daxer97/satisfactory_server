@@ -133,143 +133,91 @@ PROVISION_SCRIPT=$(mktemp)
 
 cat > "${PROVISION_SCRIPT}" <<EOF
 #!/bin/bash
-# Satisfactory Dedicated Server Automated Installer
-# Designed for Ubuntu (recommended 20.04+), Debian 11+, or compatible derivatives.
-
 set -euo pipefail
 
-# ---- Configurable Variables ----
-STEAM_USER="steam"
-SERVER_DIR="/home/$STEAM_USER/SatisfactoryDedicatedServer"
-MOTD_MESSAGE="Welcome to your Satisfactory Dedicated Server! Happy Building!"
-LOG_FILE="/var/log/satisfactory_server_setup.log"
-# Satisfactory Server default ports
-UDP_PORTS=(7777 15000 15777)
+# Ensure cloud-init finished
+sleep 10
 
-# ---- Logging Utility ----
-log() {
-  echo "$(date '+%Y-%m-%d %H:%M:%S') : $*" | tee -a "$LOG_FILE"
-}
-
-# ---- Step 1: Ensure script is run as root ----
-if [ "$(id -u)" -ne 0 ]; then
-  echo "Please run this script as root (sudo)."
-  exit 1
+# 1. Create dedicated 'steam' user if not exists
+if ! id "${SAT_USER}" &>/dev/null; then
+  useradd -m -s /bin/bash "${SAT_USER}"
 fi
 
-log "Started Satisfactory server setup."
+export DEBIAN_FRONTEND=noninteractive
 
-# ---- Step 2: Update system and install basic tools ----
-log "Updating system packages and installing essentials."
-apt-get update -y
-apt-get upgrade -y
-apt-get install -y software-properties-common apt-transport-https curl ufw sudo
+# 2. Enable 32-bit architecture FIRST
+dpkg --add-architecture i386
 
-# ---- Step 3: Enable 32-bit (i386) architecture if not already present ----
-if ! dpkg --print-foreign-architectures | grep -qw i386; then
-  log "Enabling i386 (32-bit) architecture support."
-  dpkg --add-architecture i386
-  apt-get update -y
-else
-  log "i386 architecture already enabled."
-fi
+# 3. Add Valve's official SteamCMD repo
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://repo.steampowered.com/steam/archive/stable/steam.gpg \
+  | gpg --dearmor -o /etc/apt/keyrings/steam.gpg
+echo "deb [signed-by=/etc/apt/keyrings/steam.gpg arch=amd64,i386] https://repo.steampowered.com/steam/ stable steam" \
+  > /etc/apt/sources.list.d/steam.list
 
-# ---- Step 4: Add multiverse/non-free repositories (idempotent) ----
-# Ubuntu: multiverse; Debian: non-free
-os_release=$(grep -oE '^ID=[a-z]+' /etc/os-release | cut -d'=' -f2)
-if [ "$os_release" = "ubuntu" ]; then
-  log "Adding multiverse repo (Ubuntu)."
-  add-apt-repository -y multiverse || true
-elif [ "$os_release" = "debian" ]; then
-  log "Ensuring 'non-free' is in sources.list (Debian)."
-  if ! grep -qE "non-free" /etc/apt/sources.list; then
-    sed -i 's/ main$/ main contrib non-free/' /etc/apt/sources.list
-    apt-get update -y
-  fi
-fi
+# 4. Update and install dependencies
+apt-get update
+apt-get install -y \
+  wget curl software-properties-common ca-certificates gnupg2 tmux lsof ufw sudo \
+  lib32gcc-s1 lib32stdc++6 steamcmd
 
-apt-get update -y
+# 5. Allow 'steam' to run SteamCMD and adjust ownership
+usermod -aG sudo "${SAT_USER}"
+mkdir -p "${SAT_SERVERDIR}"
 
-# ---- Step 5: Install all dependencies (idempotent and modernized) ----
-log "Installing required 32-bit libraries and dependencies for SteamCMD."
-# Replace old lib32gcc1 with lib32gcc-s1, add lib32z1 for compression support, and libc6-i386 for compatibility.
-apt-get install -y lib32gcc-s1 lib32stdc++6 lib32z1 libc6-i386
+# 6. Install Satisfactory Dedicated Server with SteamCMD
+sudo -u "${SAT_USER}" /usr/games/steamcmd \
+  +@sSteamCmdForcePlatformType linux \
+  +force_install_dir "${SAT_SERVERDIR}" \
+  +login anonymous \
+  +app_update 1690800 validate \
+  +quit
 
-# ---- Step 6: Install SteamCMD via apt (avoid manual .deb to prevent dpkg errors) ----
-log "Installing SteamCMD from the official repositories."
-apt-get install -y steamcmd
-
-# ---- Step 7: User and Directory Setup (idempotent) ----
-if ! id "$STEAM_USER" &>/dev/null; then
-  log "Creating user $STEAM_USER."
-  useradd -m -s /bin/bash "$STEAM_USER"
-fi
-
-# Tighten home dir permissions for security best practices
-chmod 700 "/home/$STEAM_USER"
-
-# Create or verify Satisfactory server directory
-install -d -m 755 "$SERVER_DIR" -o "$STEAM_USER" -g "$STEAM_USER"
-log "Ensured Satisfactory server directory: $SERVER_DIR"
-
-# ---- Step 8: Install/Update the Dedicated Server via SteamCMD ----
-log "Installing or updating Satisfactory Dedicated Server (AppID 1690800) using SteamCMD..."
-sudo -u "$STEAM_USER" /usr/games/steamcmd +login anonymous +force_install_dir "$SERVER_DIR" +app_update 1690800 validate +quit
-
-# ---- Step 9: Systemd Service Setup ----
-SYSTEMD_UNIT="/etc/systemd/system/satisfactory.service"
-log "Configuring systemd service at $SYSTEMD_UNIT"
-
-cat > "$SYSTEMD_UNIT" <<EOL
+# 7. Create systemd service for Satisfactory
+cat > /etc/systemd/system/satisfactory.service <<EOL
 [Unit]
 Description=Satisfactory Dedicated Server
 Wants=network-online.target
-After=syslog.target network.target nss-lookup.target network-online.target
+After=network-online.target
 
 [Service]
+User=${SAT_USER}
+Group=${SAT_USER}
 Type=simple
-User=$STEAM_USER
-Group=$STEAM_USER
-Environment="LD_LIBRARY_PATH=$SERVER_DIR/linux64"
-ExecStartPre=/usr/games/steamcmd +login anonymous +force_install_dir "$SERVER_DIR" +app_update 1690800 validate +quit
-ExecStart=$SERVER_DIR/FactoryServer.sh -ServerQueryPort=15777 -BeaconPort=15000 -Port=7777 -log -unattended -multihome=0.0.0.0
-WorkingDirectory=$SERVER_DIR
 Restart=on-failure
-StandardOutput=journal
+RestartSec=10
+WorkingDirectory=${SAT_SERVERDIR}
+ExecStartPre=/usr/games/steamcmd +@sSteamCmdForcePlatformType linux +force_install_dir ${SAT_SERVERDIR} +login anonymous +app_update 1690800 validate +quit
+ExecStart=${SAT_SERVERDIR}/FactoryServer.sh -unattended -log -BeaconPort=15000 -ServerQueryPort=15777 -Port=7777 -multihome=0.0.0.0
 
 [Install]
 WantedBy=multi-user.target
 EOL
 
-# Idempotently reload systemd and enable the service
 systemctl daemon-reload
 systemctl enable satisfactory
-systemctl restart satisfactory
-log "Satisfactory systemd service enabled and started."
+systemctl start satisfactory
 
-# ---- Step 10: UFW Firewall Configuration ----
-log "Configuring UFW firewall rules."
-ufw allow 22/tcp comment 'SSH'
-for port in "${UDP_PORTS[@]}"; do
-  ufw allow "$port/udp" comment "Satisfactory Server UDP port $port"
-done
+# 8. Configure UFW for Satisfactory ports
+ufw allow 7777
+ufw allow 15000
+ufw allow 15777
 ufw --force enable
 
-log "UFW rules for Satisfactory and SSH applied."
+# 9. Create save directory, fix permissions
+mkdir -p "${SAT_SAVEDIR}"
+chown -R "${SAT_USER}:${SAT_USER}" "${SAT_HOME}/.config"
 
-# ---- Step 11: /etc/motd Automation ----
-MOTD_SCRIPT="/etc/update-motd.d/99-satisfactory"
-if [ ! -f "$MOTD_SCRIPT" ]; then
-  log "Adding custom Satisfactory message to MOTD."
-  echo -e "#!/bin/sh\necho \"$MOTD_MESSAGE\"" > "$MOTD_SCRIPT"
-  chmod +x "$MOTD_SCRIPT"
-fi
+# 10. Add "Buy me a Coffee" header
+{
+  echo ""
+  echo "💖 Support this project: https://www.paypal.me/daxernet"
+  echo ""
+} >> /etc/motd
 
-# ---- Script Completion ----
-log "All steps completed! Your Satisfactory Dedicated Server should now be running and accessible."
-echo "Check with: systemctl status satisfactory"
-echo "Default ports: Query=15777 UDP, Beacon=15000 UDP, Game=7777 UDP"
-echo "Review /var/log/satisfactory_server_setup.log for a full installation record."
+# 11. Clean up apt cache
+apt-get clean
+rm -rf /var/lib/apt/lists/*
 EOF
 
 chmod +x "${PROVISION_SCRIPT}"
