@@ -146,9 +146,16 @@ log() { echo -e "\n[INFO] $*\n"; }
 err() { echo -e "\n[ERROR] $*\n" >&2; }
 
 install_with_retry() {
+    # Guard against missing argument
+    if [[ $# -lt 1 || -z "$1" ]]; then
+        err "install_with_retry() called without a package name"
+        return 1
+    fi
+
     local pkg="$1"
     local retries=3
     local count=0
+
     until apt-get install -y "$pkg"; do
         count=$((count+1))
         if (( count >= retries )); then
