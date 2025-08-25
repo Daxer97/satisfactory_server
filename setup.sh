@@ -108,6 +108,9 @@ qm start ${VMID}
 echo "Waiting 60 second for machine to boot"
 sleep 60
 
+# Perform a ping to get the IP address from DHCP
+qm guest exec ${VMID} ping 192.168.1.199
+
 # Try to find the VM IP using qemu-guest-agent
 VM_IP=$(qm guest cmd ${VMID} network-get-interfaces \
   | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' \
