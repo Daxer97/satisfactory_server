@@ -146,8 +146,7 @@ log() { echo -e "\n[INFO] $*\n"; }
 err() { echo -e "\n[ERROR] $*\n" >&2; }
 
 install_with_retry() {
-    # Guard against missing argument
-    if [[ $# -lt 1 || -z "$1" ]]; then
+    if [ $# -lt 1 ]; then
         err "install_with_retry() called without a package name"
         return 1
     fi
@@ -170,17 +169,13 @@ install_with_retry() {
 }
 
 # ===== MAIN =====
-
-# Ensure cloud-init finished
 sleep 10
 
-# 1. Create dedicated 'steam' user if not exists
 if ! id "${SAT_USER}" &>/dev/null; then
     log "Creating user ${SAT_USER}"
     useradd -m -s /bin/bash "${SAT_USER}"
 fi
 
-# 2. Install required dependencies
 export DEBIAN_FRONTEND=noninteractive
 log "Updating package lists"
 apt-get update -y
@@ -188,7 +183,6 @@ apt-get update -y
 log "Installing base dependencies"
 apt-get install -y wget curl software-properties-common ca-certificates gnupg2 tmux lsof ufw sudo
 
-# 3. Enable 32-bit architecture and install SteamCMD, libraries
 log "Enabling 32-bit architecture"
 dpkg --add-architecture i386
 apt-get update -y
@@ -200,13 +194,11 @@ install_with_retry "lib32stdc++6"
 log "Installing SteamCMD"
 install_with_retry "steamcmd"
 
-# 4. Allow 'steam' to run SteamCMD and adjust ownership
 log "Configuring user permissions"
 usermod -aG sudo "${SAT_USER}"
 mkdir -p "${SAT_SERVERDIR}"
 chown -R "${SAT_USER}:${SAT_USER}" "${SAT_SERVERDIR}"
 
-# 5. Install Satisfactory Dedicated Server with SteamCMD
 log "Installing Satisfactory Dedicated Server"
 sudo -u "${SAT_USER}" /usr/games/steamcmd \
   +@sSteamCmdForcePlatformType linux \
@@ -215,7 +207,6 @@ sudo -u "${SAT_USER}" /usr/games/steamcmd \
   +app_update 1690800 validate \
   +quit
 
-# 6. Create systemd service for Satisfactory
 log "Creating systemd service"
 cat > /etc/systemd/system/satisfactory.service <<EOL
 [Unit]
@@ -241,19 +232,16 @@ systemctl daemon-reload
 systemctl enable satisfactory
 systemctl start satisfactory
 
-# 7. Configure UFW for Satisfactory ports
 log "Configuring firewall"
 ufw allow 7777
 ufw allow 15000
 ufw allow 15777
 ufw --force enable
 
-# 8. Create save directory, fix permissions
 log "Setting up save directory"
 mkdir -p "${SAT_SAVEDIR}"
 chown -R "${SAT_USER}:${SAT_USER}" "${SAT_HOME}/.config"
 
-# 9. Add "Buy me a Coffee" header
 log "Adding MOTD message"
 {
     echo ""
@@ -262,7 +250,6 @@ log "Adding MOTD message"
 } >> /etc/motd
 
 log "Setup complete!"
-
 EOF
 
 chmod +x "${PROVISION_SCRIPT}"
