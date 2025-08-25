@@ -40,14 +40,16 @@ SAVED_GAME_SRC="" # e.g., "/home/myuser/SatisfactorySaves/"
 
 # ===== CREATE CLOUD-INIT USER-DATA =====
 # This will install qemu-guest-agent on first boot
+SSH_PUBLIC_KEY_1=$(<"$SSH_PUBLIC_KEY")
 CLOUDINIT_SNIPPET="/var/lib/vz/snippets/${VM_NAME}-cloudinit.yaml"
+
 cat > "$CLOUDINIT_SNIPPET" <<EOF
 #cloud-config
 package_update: true
 packages:
   - qemu-guest-agent
 ssh_authorized_keys:
-  - ${SSH_PUBLIC_KEY}
+  - ${SSH_PUBLIC_KEY_1}
 runcmd:
   - systemctl enable --now qemu-guest-agent
 EOF
