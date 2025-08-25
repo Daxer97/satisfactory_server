@@ -140,40 +140,33 @@ sleep 10
 
 # 1. Create dedicated 'steam' user if not exists
 if ! id "${SAT_USER}" &>/dev/null; then
-  useradd -m -s /bin/bash "${SAT_USER}"
+  useradd -m -s /bin/bash ${SAT_USER}
 fi
 
+# 2. Install required dependencies
 export DEBIAN_FRONTEND=noninteractive
 
-# 2. Enable 32-bit architecture FIRST
-dpkg --add-architecture i386
-
-# 3. Add Valve's official SteamCMD repo
-mkdir -p /etc/apt/keyrings
-curl -fsSL https://repo.steampowered.com/steam/archive/stable/steam.gpg \
-  | gpg --dearmor -o /etc/apt/keyrings/steam.gpg
-echo "deb [signed-by=/etc/apt/keyrings/steam.gpg arch=amd64,i386] https://repo.steampowered.com/steam/ stable steam" \
-  > /etc/apt/sources.list.d/steam.list
-
-# 4. Update and install dependencies
 apt-get update
-apt-get install -y \
-  wget curl software-properties-common ca-certificates gnupg2 tmux lsof ufw sudo \
-  lib32gcc-s1 lib32stdc++6 steamcmd
+apt-get install -y wget curl software-properties-common ca-certificates gnupg2 tmux lsof ufw sudo
 
-# 5. Allow 'steam' to run SteamCMD and adjust ownership
-usermod -aG sudo "${SAT_USER}"
-mkdir -p "${SAT_SERVERDIR}"
+# 3. Enable 32-bit architecture and install SteamCMD, libraries
+dpkg --add-architecture i386
+apt-get update
+apt-get install -y lib32gcc-s1 lib32stdc++6 steamcmd
 
-# 6. Install Satisfactory Dedicated Server with SteamCMD
-sudo -u "${SAT_USER}" /usr/games/steamcmd \
+# 4. Allow 'steam' to run SteamCMD and adjust ownership
+usermod -aG sudo ${SAT_USER}
+mkdir -p ${SAT_SERVERDIR}
+
+# 5. Install Satisfactory Dedicated Server with SteamCMD
+sudo -u ${SAT_USER} /usr/games/steamcmd \
   +@sSteamCmdForcePlatformType linux \
-  +force_install_dir "${SAT_SERVERDIR}" \
+  +force_install_dir ${SAT_SERVERDIR} \
   +login anonymous \
   +app_update 1690800 validate \
   +quit
 
-# 7. Create systemd service for Satisfactory
+# 6. Create systemd service for Satisfactory
 cat > /etc/systemd/system/satisfactory.service <<EOL
 [Unit]
 Description=Satisfactory Dedicated Server
@@ -198,26 +191,20 @@ systemctl daemon-reload
 systemctl enable satisfactory
 systemctl start satisfactory
 
-# 8. Configure UFW for Satisfactory ports
+# 7. Configure UFW for Satisfactory ports (optional, open)
 ufw allow 7777
 ufw allow 15000
 ufw allow 15777
 ufw --force enable
 
-# 9. Create save directory, fix permissions
+# 8. Create save directory, fix permissions
 mkdir -p "${SAT_SAVEDIR}"
-chown -R "${SAT_USER}:${SAT_USER}" "${SAT_HOME}/.config"
+chown -R ${SAT_USER}:${SAT_USER} "${SAT_HOME}/.config"
 
-# 10. Add "Buy me a Coffee" header
-{
-  echo ""
-  echo "💖 Support this project: https://www.paypal.me/daxernet"
-  echo ""
-} >> /etc/motd
-
-# 11. Clean up apt cache
-apt-get clean
-rm -rf /var/lib/apt/lists/*
+# 9. Add "Buy me a Coffe header"
+sudo sh -c 'echo "" >> /etc/motd'
+sudo sh -c 'echo "💖 Support this project: https://www.paypal.me/daxernet" >> /etc/motd'
+sudo sh -c 'echo "" >> /etc/motd'
 EOF
 
 chmod +x "${PROVISION_SCRIPT}"
