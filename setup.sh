@@ -135,82 +135,38 @@ cat > "${PROVISION_SCRIPT}" <<EOF
 #!/bin/bash
 set -euo pipefail
 
-# ===== CONFIG =====
-SAT_USER="${SAT_USER:-steam}"
-SAT_SERVERDIR="${SAT_SERVERDIR:-/opt/satisfactory}"
-SAT_HOME="/home/${SAT_USER}"
-SAT_SAVEDIR="${SAT_SAVEDIR:-${SAT_HOME}/.config/Epic/FactoryGame/Saved/SaveGames/server}"
-
-# ===== FUNCTIONS =====
-log() { echo -e "\n[INFO] $*\n"; }
-err() { echo -e "\n[ERROR] $*\n" >&2; }
-
-install_with_retry() {
-    # Accept package name(s) as arguments without touching $1
-    if [ "$#" -lt 1 ]; then
-        err "install_with_retry() called without a package name"
-        return 1
-    fi
-
-    local args=("$@")
-    local pkg="${args[0]}"
-
-    local retries=3
-    local count=0
-
-    until apt-get install -y "$pkg"; do
-        count=$((count+1))
-        if (( count >= retries )); then
-            err "Failed to install $pkg after $retries attempts."
-            return 1
-        fi
-        err "Installation of $pkg failed. Attempt $count/$retries. Fixing and retrying..."
-        apt-get install -f -y || true
-        dpkg --configure -a || true
-        sleep 5
-    done
-}
-
-# ===== MAIN =====
+# Ensure cloud-init finished
 sleep 10
 
+# 1. Create dedicated 'steam' user if not exists
 if ! id "${SAT_USER}" &>/dev/null; then
-    log "Creating user ${SAT_USER}"
-    useradd -m -s /bin/bash "${SAT_USER}"
+  useradd -m -s /bin/bash ${SAT_USER}
 fi
 
+# 2. Install required dependencies
 export DEBIAN_FRONTEND=noninteractive
-log "Updating package lists"
-apt-get update -y
 
-log "Installing base dependencies"
+apt-get update
 apt-get install -y wget curl software-properties-common ca-certificates gnupg2 tmux lsof ufw sudo
 
-log "Enabling 32-bit architecture"
+# 3. Enable 32-bit architecture and install SteamCMD, libraries
 dpkg --add-architecture i386
-apt-get update -y
+apt-get update
+apt-get install -y lib32gcc-s1 lib32stdc++6 steamcmd
 
-log "Installing 32-bit libraries"
-install_with_retry lib32gcc-s1
-install_with_retry lib32stdc++6
+# 4. Allow 'steam' to run SteamCMD and adjust ownership
+usermod -aG sudo ${SAT_USER}
+mkdir -p ${SAT_SERVERDIR}
 
-log "Installing SteamCMD"
-install_with_retry steamcmd
-
-log "Configuring user permissions"
-usermod -aG sudo "${SAT_USER}"
-mkdir -p "${SAT_SERVERDIR}"
-chown -R "${SAT_USER}:${SAT_USER}" "${SAT_SERVERDIR}"
-
-log "Installing Satisfactory Dedicated Server"
-sudo -u "${SAT_USER}" /usr/games/steamcmd \
+# 5. Install Satisfactory Dedicated Server with SteamCMD
+sudo -u ${SAT_USER} /usr/games/steamcmd \
   +@sSteamCmdForcePlatformType linux \
-  +force_install_dir "${SAT_SERVERDIR}" \
+  +force_install_dir ${SAT_SERVERDIR} \
   +login anonymous \
   +app_update 1690800 validate \
   +quit
 
-log "Creating systemd service"
+# 6. Create systemd service for Satisfactory
 cat > /etc/systemd/system/satisfactory.service <<EOL
 [Unit]
 Description=Satisfactory Dedicated Server
@@ -235,25 +191,20 @@ systemctl daemon-reload
 systemctl enable satisfactory
 systemctl start satisfactory
 
-log "Configuring firewall"
+# 7. Configure UFW for Satisfactory ports (optional, open)
 ufw allow 7777
 ufw allow 15000
 ufw allow 15777
 ufw --force enable
 
-log "Setting up save directory"
+# 8. Create save directory, fix permissions
 mkdir -p "${SAT_SAVEDIR}"
-chown -R "${SAT_USER}:${SAT_USER}" "${SAT_HOME}/.config"
+chown -R ${SAT_USER}:${SAT_USER} "${SAT_HOME}/.config"
 
-log "Adding MOTD message"
-{
-    echo ""
-    echo "💖 Support this project: https://www.paypal.me/daxernet"
-    echo ""
-} >> /etc/motd
-
-log "Setup complete!"
-
+# 9. Add "Buy me a Coffe header"
+sudo sh -c 'echo "" >> /etc/motd'
+sudo sh -c 'echo "💖 Support this project: https://www.paypal.me/daxernet" >> /etc/motd'
+sudo sh -c 'echo "" >> /etc/motd'
 EOF
 
 chmod +x "${PROVISION_SCRIPT}"
