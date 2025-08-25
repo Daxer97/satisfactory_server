@@ -146,12 +146,16 @@ log() { echo -e "\n[INFO] $*\n"; }
 err() { echo -e "\n[ERROR] $*\n" >&2; }
 
 install_with_retry() {
-    if [ $# -lt 1 ]; then
+    # Safe capture without touching $1 directly
+    if [ "$#" -lt 1 ]; then
         err "install_with_retry() called without a package name"
         return 1
     fi
 
-    local pkg="$1"
+    # Use "$@" to avoid unbound variable expansion
+    local pkg
+    pkg="$1"
+
     local retries=3
     local count=0
 
@@ -188,11 +192,11 @@ dpkg --add-architecture i386
 apt-get update -y
 
 log "Installing 32-bit libraries"
-install_with_retry "lib32gcc-s1"
-install_with_retry "lib32stdc++6"
+install_with_retry lib32gcc-s1
+install_with_retry lib32stdc++6
 
 log "Installing SteamCMD"
-install_with_retry "steamcmd"
+install_with_retry steamcmd
 
 log "Configuring user permissions"
 usermod -aG sudo "${SAT_USER}"
@@ -226,6 +230,30 @@ ExecStart=${SAT_SERVERDIR}/FactoryServer.sh -unattended -log -BeaconPort=15000 -
 
 [Install]
 WantedBy=multi-user.target
+EOL
+
+systemctl daemon-reload
+systemctl enable satisfactory
+systemctl start satisfactory
+
+log "Configuring firewall"
+ufw allow 7777
+ufw allow 15000
+ufw allow 15777
+ufw --force enable
+
+log "Setting up save directory"
+mkdir -p "${SAT_SAVEDIR}"
+chown -R "${SAT_USER}:${SAT_USER}" "${SAT_HOME}/.config"
+
+log "Adding MOTD message"
+{
+    echo ""
+    echo "💖 Support this project: https://www.paypal.me/daxernet"
+    echo ""
+} >> /etc/motd
+
+log "Setup complete!"
 EOL
 
 systemctl daemon-reload
