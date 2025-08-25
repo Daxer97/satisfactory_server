@@ -45,7 +45,7 @@ CLOUDINIT_SNIPPET="/var/lib/vz/snippets/${VM_NAME}-cloudinit.yaml"
 
 cat > "$CLOUDINIT_SNIPPET" <<EOF
 #cloud-config
-package_update: true
+package_update: false
 packages:
   - qemu-guest-agent
 ssh_authorized_keys:
