@@ -46,6 +46,8 @@ cat > "$CLOUDINIT_SNIPPET" <<EOF
 package_update: true
 packages:
   - qemu-guest-agent
+ssh_authorized_keys:
+  - ${SSH_PUBLIC_KEY}
 runcmd:
   - systemctl enable --now qemu-guest-agent
 EOF
