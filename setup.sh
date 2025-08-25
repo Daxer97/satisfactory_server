@@ -40,7 +40,7 @@ SAVED_GAME_SRC="" # e.g., "/home/myuser/SatisfactorySaves/"
 
 # ===== CREATE CLOUD-INIT USER-DATA =====
 # This will install qemu-guest-agent on first boot
-CLOUDINIT_SNIPPET="/var/lib/vz/snippets/${VMNAME}-cloudinit.yaml"
+CLOUDINIT_SNIPPET="/var/lib/vz/snippets/${VM_NAME}-cloudinit.yaml"
 cat > "$CLOUDINIT_SNIPPET" <<EOF
 #cloud-config
 package_update: true
@@ -96,7 +96,7 @@ qm set ${VMID} \
   --ide2 "${STORAGE}:cloudinit" \
   --ipconfig0 ip=dhcp \
   --sshkeys "${SSH_PUBLIC_KEY}" \
-  --cicustom "user=local:snippets/${VMNAME}-cloudinit.yaml"
+  --cicustom "user=local:snippets/${VM_NAME}-cloudinit.yaml"
   
 qm resize ${VMID} scsi0 ${DISK_SIZE}
 
