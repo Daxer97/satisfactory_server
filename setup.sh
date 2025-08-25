@@ -109,10 +109,9 @@ echo "Waiting 60 second for machine to boot"
 sleep 60
 
 # Try to find the VM IP using qemu-guest-agent
-VM_IP=$(qm guest cmd "${VMID}" network-get-interfaces \
-    | grep -oP '"ip-address":\s*"\K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' \
-    | grep -v "^127\." \
-    | head -n1)
+VM_IP=$(qm guest cmd ${VMID} network-get-interfaces \
+  | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' \
+  | grep -v '^127\.')
     
 if [ -n "$VM_IP" ]; then
     echo "Detected VM IP: $VM_IP"
