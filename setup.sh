@@ -38,6 +38,18 @@ SAT_SAVEDIR="${SAT_HOME}/.config/Epic/FactoryGame/Saved/SaveGames/server"
 # Enter the path to your single-player save files (optional, may prompt user later)
 SAVED_GAME_SRC="" # e.g., "/home/myuser/SatisfactorySaves/"
 
+# ===== CREATE CLOUD-INIT USER-DATA =====
+# This will install qemu-guest-agent on first boot
+CLOUDINIT_SNIPPET="/var/lib/vz/snippets/${VMNAME}-cloudinit.yaml"
+cat > "$CLOUDINIT_SNIPPET" <<EOF
+#cloud-config
+package_update: true
+packages:
+  - qemu-guest-agent
+runcmd:
+  - systemctl enable --now qemu-guest-agent
+EOF
+
 #
 # --- END USER CONFIGURATION SECTION ---
 #
@@ -84,6 +96,7 @@ qm set ${VMID} \
   --ide2 "${STORAGE}:cloudinit" \
   --ipconfig0 ip=dhcp \
   --sshkeys "${SSH_PUBLIC_KEY}" \
+  --cicustom "user=local:snippets/${VMNAME}-cloudinit.yaml"
   
 qm resize ${VMID} scsi0 ${DISK_SIZE}
 
@@ -91,19 +104,17 @@ qm resize ${VMID} scsi0 ${DISK_SIZE}
 
 echo "==> [3/8] Starting VM for cloud-init provisioning..."
 qm start ${VMID}
+
 echo "Waiting 60 second for machine to boot"
 sleep 60
 
 # Try to find the VM IP using qemu-guest-agent
-VM_MAC=$(qm config ${VMID} | awk -F'[,=]' '/net0/ {print $2}')
-for i in {1..20}; do
-    VM_IP=$(ip neigh | grep -i "$VM_MAC" | awk '{print $1}')
-    if [ -n "$VM_IP" ]; then
-        break#
-    fi
-    sleep 5
-done
-
+VM_IP=$(qm guest cmd "${VMID}" network-get-interfaces \
+    | jq -r '.[]["ip-addresses"][]? 
+              | select(.["ip-address-type"]=="ipv4") 
+              | .["ip-address"]' \
+    | head -n1)
+    
 if [ -n "$VM_IP" ]; then
     echo "Detected VM IP: $VM_IP"
 else
