@@ -110,9 +110,8 @@ sleep 60
 
 # Try to find the VM IP using qemu-guest-agent
 VM_IP=$(qm guest cmd "${VMID}" network-get-interfaces \
-    | jq -r '.[]["ip-addresses"][]? 
-              | select(.["ip-address-type"]=="ipv4") 
-              | .["ip-address"]' \
+    | grep -oP '"ip-address":\s*"\K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' \
+    | grep -v "^127\." \
     | head -n1)
     
 if [ -n "$VM_IP" ]; then
